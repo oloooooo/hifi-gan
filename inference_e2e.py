@@ -45,25 +45,26 @@ def inference(a):
     generator.remove_weight_norm()
     with torch.no_grad():
         for i, filname in enumerate(filelist):
-            x = np.load(os.path.join(a.input_mels_dir, filname))
-            x = torch.FloatTensor(x).to(device)
-            y_g_hat = generator(x)
-            audio = y_g_hat.squeeze()
-            audio = audio * MAX_WAV_VALUE
-            audio = audio.cpu().numpy().astype('int16')
+            if filname.endswith(".npy")
+                x = np.load(os.path.join(a.input_mels_dir, filname),allow_pickle=True)
+                x = torch.FloatTensor(x).transpose(0,1).to(device) if x.shape[0]!=80 else torch.FloatTensor(x).to(device)
+                y_g_hat = generator(x)
+                audio = y_g_hat.squeeze()
+                audio = audio * MAX_WAV_VALUE
+                audio = audio.cpu().numpy().astype('int16')
 
-            output_file = os.path.join(a.output_dir, os.path.splitext(filname)[0] + '_generated_e2e.wav')
-            write(output_file, h.sampling_rate, audio)
-            print(output_file)
+                output_file = os.path.join(a.output_dir, os.path.splitext(filname)[0] + '_generated_e2e.wav')
+                write(output_file, h.sampling_rate, audio)
+                print(output_file)
 
 
 def main():
     print('Initializing Inference Process..')
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_mels_dir', default='test_mel_files')
+    parser.add_argument('--input_mels_dir', default='/root/betaVC')
     parser.add_argument('--output_dir', default='generated_files_from_mel')
-    parser.add_argument('--checkpoint_file', required=True)
+    parser.add_argument('--checkpoint_file', default='/root/hifi-gan/hifigan/generator_v1')
     a = parser.parse_args()
 
     config_file = os.path.join(os.path.split(a.checkpoint_file)[0], 'config.json')

@@ -1,22 +1,23 @@
 import glob
 import os
-import matplotlib
+# import matplotlib
 import torch
 from torch.nn.utils import weight_norm
-matplotlib.use("Agg")
-import matplotlib.pylab as plt
+# matplotlib.use("Agg")
+# import matplotlib.pylab as plt
+import json
+import hifigan
 
+# def plot_spectrogram(spectrogram):
+#     fig, ax = plt.subplots(figsize=(10, 2))
+#     im = ax.imshow(spectrogram, aspect="auto", origin="lower",
+#                    interpolation='none')
+#     plt.colorbar(im, ax=ax)
 
-def plot_spectrogram(spectrogram):
-    fig, ax = plt.subplots(figsize=(10, 2))
-    im = ax.imshow(spectrogram, aspect="auto", origin="lower",
-                   interpolation='none')
-    plt.colorbar(im, ax=ax)
+#     fig.canvas.draw()
+#     plt.close()
 
-    fig.canvas.draw()
-    plt.close()
-
-    return fig
+#     return fig
 
 
 def init_weights(m, mean=0.0, std=0.01):
@@ -56,3 +57,15 @@ def scan_checkpoint(cp_dir, prefix):
         return None
     return sorted(cp_list)[-1]
 
+def get_vocoder(rank):
+    with open("hifigan/config.json", "r") as f:
+        config = json.load(f)
+    config = hifigan.AttrDict(config)
+    vocoder = hifigan.Generator(config)
+    ckpt = torch.load("hifigan/generator_v1")
+    vocoder.load_state_dict(ckpt["generator"])
+    vocoder.eval()
+    vocoder.remove_weight_norm()
+    vocoder.cuda(rank)
+    return vocoder
+    
